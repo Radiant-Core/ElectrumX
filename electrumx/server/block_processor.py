@@ -558,7 +558,7 @@ class BlockProcessor:
         touched = self.touched
         undo_entry_len = 13 + HASHX_LEN + 32 # 32 added for codScriptHash
         script_hashX = self.coin.hashX_from_script
-
+        mints = set() # Missing mints
         for tx, tx_hash in reversed(txs):
             for idx, txout in enumerate(tx.outputs):
                 # Spend the TX outputs.  Be careful with unspendable
