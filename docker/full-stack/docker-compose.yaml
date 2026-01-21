@@ -32,7 +32,7 @@ services:
   # ElectrumX Server
   electrumx:
     build:
-      context: ../..
+      context: .
       dockerfile: Dockerfile
     container_name: electrumx_server
     restart: unless-stopped
