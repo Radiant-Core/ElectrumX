@@ -1,6 +1,4 @@
-=====================
-ElectrumX for Radiant
-=====================
+= ElectrumX for Radiant =
 2026 The Radiant Community Devs
 
 :Licence: MIT
