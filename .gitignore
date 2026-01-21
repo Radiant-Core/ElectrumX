@@ -42,3 +42,6 @@ Thumbs.db
 
 # External dependencies
 /Users/main/Desktop/radiant-core
+
+# Release zip files
+electrumx-*.zip
