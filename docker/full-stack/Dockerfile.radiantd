@@ -4,7 +4,6 @@
 
 FROM ubuntu:22.04
 
-LABEL maintainer="radiantblockchain@protonmail.com"
 LABEL description="Radiant Node (radiantd) built from Radiant-Core"
 
 ARG DEBIAN_FRONTEND=noninteractive

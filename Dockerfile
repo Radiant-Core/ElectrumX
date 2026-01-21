@@ -4,7 +4,6 @@
 
 FROM ubuntu:22.04
 
-LABEL maintainer="radiantblockchain@protonmail.com"
 LABEL version="1.3.0"
 LABEL description="Docker image for electrumx radiantd node"
 
