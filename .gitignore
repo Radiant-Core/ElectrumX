@@ -43,5 +43,6 @@ Thumbs.db
 # External dependencies
 /Users/main/Desktop/radiant-core
 
-# Release zip files
+# Release files (not committed, uploaded to GitHub Releases)
 electrumx-*.zip
+SHA256SUMS.txt

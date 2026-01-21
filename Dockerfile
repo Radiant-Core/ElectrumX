@@ -1,7 +1,6 @@
-# The Radiant Blockchain Developers
-# The purpose of this image is to be able to host ElectrumX for radiantd (RXD)
+# ElectrumX for Radiant - The Radiant Blockchain Developers
+# https://github.com/Radiant-Core/ElectrumX
 # Build with: `docker build -t electrumx .`
-# Public images at: https://hub.docker.com/repository/docker/radiantblockchain
 
 FROM ubuntu:22.04
 

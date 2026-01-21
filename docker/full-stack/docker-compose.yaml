@@ -1,9 +1,11 @@
 version: "3.8"
 
 services:
-  # Radiant Node (radiantd)
+  # Radiant Node (radiantd) - Built from Radiant-Core/Radiant-Core
   radiantd:
-    image: radiantblockchain/radiant-node:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.radiantd
     container_name: radiantd
     restart: unless-stopped
     volumes:
@@ -11,11 +13,9 @@ services:
     ports:
       - "7332:7332"   # RPC port
       - "7333:7333"   # P2P port
-    environment:
-      - SUPPORTED_SERVICES=rpc
     command: >
-      radiantd
       -server=1
+      -printtoconsole
       -rpcuser=${RPC_USER:-radiant}
       -rpcpassword=${RPC_PASS:-radiant}
       -rpcallowip=0.0.0.0/0
@@ -27,7 +27,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 120s
 
   # ElectrumX Server
   electrumx:

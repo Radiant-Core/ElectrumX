@@ -2,7 +2,11 @@
 
 One-command deployment for running a complete Radiant infrastructure with both the full node (radiantd) and ElectrumX server.
 
-**This deployment is self-contained** - it clones ElectrumX directly from GitHub during build. You can deploy by downloading just this `docker/full-stack/` directory.
+**This deployment is fully self-contained** - both radiantd and ElectrumX are built from source during the Docker build process:
+- **Radiant Node**: Built from [Radiant-Core/Radiant-Core](https://github.com/Radiant-Core/Radiant-Core)
+- **ElectrumX**: Built from [Radiant-Core/ElectrumX](https://github.com/Radiant-Core/ElectrumX)
+
+You can deploy by downloading just this `docker/full-stack/` directory.
 
 ## Quick Start
 
@@ -32,12 +36,16 @@ One-command deployment for running a complete Radiant infrastructure with both t
 | electrumx | 50012 | SSL connections |
 | electrumx | 8000 | RPC interface |
 
-## Initial Sync
+## Build & Sync Times
 
-The first sync will take time:
-1. **radiantd** must fully sync the blockchain first
+**First-time build** (compiles from source):
+- radiantd: ~10-20 minutes
+- electrumx: ~2-5 minutes
+
+**Initial sync** (after build):
+1. **radiantd** must fully sync the blockchain first (1-4 hours)
 2. **electrumx** will wait (via healthcheck) until radiantd is ready
-3. **electrumx** then indexes the blockchain (can take hours/days depending on hardware)
+3. **electrumx** then indexes the blockchain (1-3 hours depending on hardware)
 
 Monitor progress:
 ```bash
