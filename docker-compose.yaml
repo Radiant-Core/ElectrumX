@@ -3,7 +3,7 @@ services:
   electrumx:
     build:
       context: .
-      dockerfile: ./contrib/radiant/Dockerfile
+      dockerfile: Dockerfile
     container_name: electrumx_server
     ports:
       - "50010:50010"   # Port for TCP connections

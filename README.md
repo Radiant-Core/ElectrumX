@@ -37,11 +37,11 @@ Prerequisites
 
 .. code-block:: bash
 
-    git clone https://github.com/radiantblockchain/electrumx.git
-    cd electrumx
+    git clone https://github.com/Radiant-Core/ElectrumX.git
+    cd ElectrumX
 
     # Copy the example config
-    cp .env.rocksdb.example .env
+    cp config.env .env
 
     # Edit with your Radiant node credentials
     vi .env
@@ -97,6 +97,27 @@ For production, use proper CA-signed certificates. For testing:
     # Graceful shutdown
     docker-compose down
 
+Full Stack Deployment (Node + ElectrumX)
+----------------------------------------
+
+For a complete one-command deployment including both Radiant Node and ElectrumX:
+
+.. code-block:: bash
+
+    cd docker/full-stack
+    cp .env.example .env
+    # Edit .env with secure RPC credentials
+    docker-compose up -d
+
+This automatically:
+
+- Starts a Radiant full node (radiantd)
+- Waits for node sync via healthcheck
+- Starts ElectrumX connected to the node
+- Persists all data in Docker volumes
+
+See ``docker/full-stack/README.md`` for details.
+
 Manual Installation
 ===================
 
@@ -111,8 +132,8 @@ For non-Docker deployments:
         libbz2-dev libzstd-dev liblz4-dev zlib1g-dev
 
     # Clone repository
-    git clone https://github.com/radiantblockchain/electrumx.git
-    cd electrumx
+    git clone https://github.com/Radiant-Core/ElectrumX.git
+    cd ElectrumX
 
     # Install Python dependencies
     pip3 install -r requirements.txt

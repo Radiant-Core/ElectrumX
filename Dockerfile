@@ -9,12 +9,7 @@ LABEL maintainer="radiantblockchain@protonmail.com"
 LABEL version="1.3.0"
 LABEL description="Docker image for electrumx radiantd node"
 
-ARG DEBIAN_FRONTEND=nointeractive
-RUN apt update
-RUN apt-get install -y curl
-RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
-RUN apt-get install -y nodejs
-
+ARG DEBIAN_FRONTEND=noninteractive
 ENV PACKAGES="\
   build-essential \
   libcurl4-openssl-dev \

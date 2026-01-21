@@ -1,1 +1,10 @@
 electrumdb
+electrumx-db
+electrumx-db-*
+.venv
+.venv*
+.git
+__pycache__
+*.pyc
+*.pyo
+benchmarks
