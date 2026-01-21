@@ -6,7 +6,7 @@
 FROM ubuntu:22.04
 
 LABEL maintainer="radiantblockchain@protonmail.com"
-LABEL version="1.2.0"
+LABEL version="1.3.0"
 LABEL description="Docker image for electrumx radiantd node"
 
 ARG DEBIAN_FRONTEND=nointeractive
@@ -34,6 +34,13 @@ ENV PACKAGES="\
   python3-pip \
   python3-dev \
   libleveldb-dev \
+  librocksdb-dev \
+  libsnappy-dev \
+  libbz2-dev \
+  libzstd-dev \
+  liblz4-dev \
+  zlib1g-dev \
+  libgflags-dev \
 "
 # Note can remove the opencl and ocl packages above when not building on a system for GPU/mining
 # Included only for reference purposes if this container would be used for mining as well.
@@ -47,31 +54,44 @@ RUN mkdir /root/electrumdb
 
 WORKDIR /root
 
-# ORIGINAL SOURCE
-RUN git clone --depth 1 --branch master https://github.com/radiantblockchain/electrumx.git
+# Clone from GitHub
+RUN git clone --depth 1 --branch master https://github.com/Radiant-Core/ElectrumX.git electrumx
 
 WORKDIR /root/electrumx
 
+# Install Cython first to avoid python-rocksdb build issues
+RUN python3 -m pip install 'Cython<3'
 RUN python3 -m pip install -r requirements.txt
 
-ENV DAEMON_URL=http://dockeruser:dockerpass@localhost:7332/
+# Core configuration
+ENV DAEMON_URL=http://user:pass@localhost:7332/
 ENV COIN=Radiant
+ENV NET=mainnet
 ENV REQUEST_TIMEOUT=60
 ENV DB_DIRECTORY=/root/electrumdb
-ENV DB_ENGINE=leveldb
+ENV DB_ENGINE=rocksdb
+ENV ELECTRUMX_ENV=prod
 
-# SSL VERSION
-ENV SERVICES=tcp://0.0.0.0:50010,SSL://0.0.0.0:50012
+# SSL configuration
+ENV SERVICES=tcp://0.0.0.0:50010,SSL://0.0.0.0:50012,rpc://0.0.0.0:8000
 ENV SSL_CERTFILE=/root/electrumdb/server.crt
 ENV SSL_KEYFILE=/root/electrumdb/server.key
-# NO SSL VERSION
-#ENV SERVICES=tcp://0.0.0.0:50010
-ENV HOST=""
+
+# Production defaults
 ENV ALLOW_ROOT=true
 ENV CACHE_MB=10000
 ENV MAX_SESSIONS=10000
 ENV MAX_SEND=10000000
 ENV MAX_RECV=10000000
+
+# Rate limiting (security)
+ENV COST_SOFT_LIMIT=1000
+ENV COST_HARD_LIMIT=10000
+
+# RocksDB production tuning
+ENV ROCKSDB_COMPRESSION=lz4
+ENV ROCKSDB_BLOCK_CACHE_MB=256
+ENV ROCKSDB_MAX_OPEN_FILES=512
 
 # Create SSL
 WORKDIR /root/electrumdb
@@ -81,7 +101,7 @@ RUN openssl x509 -req -days 1825 -in server.csr -signkey server.key -out server.
 
 WORKDIR /root/electrumx
 
-EXPOSE 50010 50012
+EXPOSE 50010 50012 8000
 
 ENTRYPOINT ["python3", "electrumx_server"]
 

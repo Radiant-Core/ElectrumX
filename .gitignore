@@ -14,3 +14,31 @@ docs/_build
 .mypy_cache/
 .idea/
 electrumdb
+
+# Local database directories
+electrumx-db/
+electrumx-db-*/
+
+# Environment files (may contain credentials)
+.env
+!.env.rocksdb.example
+
+# Benchmark artifacts
+benchmarks/*.log
+benchmarks/*.txt
+benchmarks/*.pid
+
+# Project documentation (internal)
+PRD.md
+
+# Virtual environments
+.venv/
+.venv*/
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# External dependencies
+/Users/main/Desktop/radiant-core

@@ -60,7 +60,7 @@ class Env(EnvBase):
 
         # Misc
 
-        self.db_engine = self.default('DB_ENGINE', 'leveldb')
+        self.db_engine = self.default('DB_ENGINE', 'rocksdb')
         self.banner_file = self.default('BANNER_FILE', None)
         self.tor_banner_file = self.default('TOR_BANNER_FILE',
                                             self.banner_file)

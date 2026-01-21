@@ -2,6 +2,17 @@
  ChangeLog
 ===========
 
+Version 1.3.0 (21 Jan 2026)
+===========================
+
+* **RocksDB is now the default database backend** for production deployments
+* Added comprehensive RocksDB tuning via environment variables
+* Added ``ELECTRUMX_ENV`` variable (prod/dev/test) for automatic tuning defaults
+* ~52% lower steady-state RAM usage with RocksDB (561MB vs 1.17GB)
+* Improved Docker configuration with production-ready defaults
+* Added rate limiting support via ``COST_SOFT_LIMIT`` and ``COST_HARD_LIMIT``
+* Updated documentation with deployment guides and tuning recommendations
+
 Version 1.21.0 (7 Oct 2022)
 ============================
 
