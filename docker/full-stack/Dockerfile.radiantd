@@ -4,6 +4,7 @@
 
 FROM ubuntu:22.04
 
+LABEL maintainer="radiantblockchain@protonmail.com"
 LABEL description="Radiant Node (radiantd) built from Radiant-Core"
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -20,8 +21,8 @@ RUN apt-get update && apt-get install -y \
     bsdmainutils \
     libboost-all-dev \
     libzmq3-dev \
-    git \
     libminiupnpc-dev \
+    git \
     cmake \
     ninja-build \
     python3 \
@@ -37,6 +38,7 @@ WORKDIR /build/radiant
 # Build radiantd
 RUN cmake -B build -G Ninja \
     -DBUILD_RADIANT_QT=OFF \
+    -DBUILD_RADIANT_WALLET=OFF \
     -DENABLE_MAN=OFF \
     -DCMAKE_BUILD_TYPE=Release
 
