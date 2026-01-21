@@ -2,6 +2,8 @@
 
 One-command deployment for running a complete Radiant infrastructure with both the full node (radiantd) and ElectrumX server.
 
+**This deployment is self-contained** - it clones ElectrumX directly from GitHub during build. You can deploy by downloading just this `docker/full-stack/` directory.
+
 ## Quick Start
 
 1. **Copy environment file and configure:**

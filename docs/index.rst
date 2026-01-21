@@ -2,23 +2,17 @@
 ElectrumX
 =========
 
-.. image:: https://travis-ci.org/kyuupichan/electrumx.svg?branch=master
-    :target: https://travis-ci.org/kyuupichan/electrumx
-.. image:: https://coveralls.io/repos/github/kyuupichan/electrumx/badge.svg
-    :target: https://coveralls.io/github/kyuupichan/electrumx
-
-A reimplementation of Electrum-Server for a future with bigger blocks.
+A high-performance Electrum server implementation for the Radiant blockchain.
 
 The current version is |release|.
 
 Source Code
 ===========
 
-The project is hosted on `GitHub <https://github.com/kyuupichan/electrumx/>`_.  and uses
-Azure Pipelines for Continuous Integration.
+The project is hosted on `GitHub <https://github.com/Radiant-Core/ElectrumX/>`_.
 
 Please submit an issue on the `bug tracker
-<https://github.com/kyuupichan/electrumx/issues>`_ if you have found a
+<https://github.com/Radiant-Core/ElectrumX/issues>`_ if you have found a
 bug or have a suggestion to improve the server.
 
 Authors and License
@@ -28,7 +22,7 @@ Neil Booth wrote the vast majority of the code; see :ref:`Authors`.
 Python version at least 3.8 is required.
 
 The code is released under the `MIT Licence
-<https://github.com/kyuupichan/electrumx/LICENCE>`_.
+<https://github.com/Radiant-Core/ElectrumX/blob/master/LICENCE>`_.
 
 Getting Started
 ===============
