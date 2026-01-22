@@ -24,6 +24,7 @@ ENV PACKAGES="\
   vim \
   wget \
   curl \
+  netcat-openbsd \
   cmake \
   python3 \
   python3-pip \
