@@ -204,10 +204,10 @@ class Radiant(Coin):
     """Radiant Mainnet - https://github.com/Radiant-Core/Radiant-Core"""
     NAME = "Radiant"
     # TX estimates for ETA calculation (updated Jan 2026)
-    # ~27M txs at height ~400K = ~68 tx/block average
-    TX_COUNT = 27000000
-    TX_COUNT_HEIGHT = 400000
-    TX_PER_BLOCK = 68
+    # 27.3M txs at height 396,426 = ~69 tx/block average
+    TX_COUNT = 27500000
+    TX_COUNT_HEIGHT = 396500
+    TX_PER_BLOCK = 69
     PEERS = []
     GENESIS_ACTIVATION = 0
     RPC_PORT = 7332
