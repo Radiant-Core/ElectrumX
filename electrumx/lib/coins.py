@@ -57,7 +57,7 @@ class Coin:
 
     SHORTNAME = "RXD"
     NET = "mainnet"
-    REORG_LIMIT = 200
+    REORG_LIMIT = 6
     # Not sure if these are coin-specific
     RPC_URL_REGEX = re.compile('.+@(\\[[0-9a-fA-F:]+\\]|[^:]+)(:[0-9]+)?')
     VALUE_PER_COIN = 100000000
@@ -201,61 +201,54 @@ class Coin:
 
 
 class Radiant(Coin):
+    """Radiant Mainnet - https://github.com/Radiant-Core/Radiant-Core"""
     NAME = "Radiant"
-    TX_COUNT = 1
-    TX_COUNT_HEIGHT = 1
-    TX_PER_BLOCK = 400
-    PEERS = [
-    ]
+    # TX estimates for ETA calculation (updated Jan 2026)
+    # ~27M txs at height ~400K = ~68 tx/block average
+    TX_COUNT = 27000000
+    TX_COUNT_HEIGHT = 400000
+    TX_PER_BLOCK = 68
+    PEERS = []
     GENESIS_ACTIVATION = 0
     RPC_PORT = 7332
 
+
 class RadiantTestnetMixin:
+    """Mixin for Radiant testnet variants."""
     SHORTNAME = "XTN"
     NET = "testnet"
-    P2PKH_VERBYTE = bytes.fromhex("6f")
-    P2SH_VERBYTES = [bytes.fromhex("c4")]
-    WIF_BYTE = bytes.fromhex("ef")
-    GENESIS_HASH = ('000000002008a2f4a76b850a838ae084'
-                    '994c200dc2fd354f73102298fe063a91')
+    P2PKH_VERBYTE = bytes.fromhex("6f")  # 111
+    P2SH_VERBYTES = [bytes.fromhex("c4")]  # 196
+    WIF_BYTE = bytes.fromhex("ef")  # 239
     REORG_LIMIT = 8000
-    TX_COUNT = 1
-    TX_COUNT_HEIGHT = 1
-    TX_PER_BLOCK = 21
-    RPC_PORT = 17332
+    TX_COUNT = 100000
+    TX_COUNT_HEIGHT = 50000
+    TX_PER_BLOCK = 10
     PEER_DEFAULT_PORTS = {'t': '51001', 's': '51002'}
 
-class RadiantTestnet(RadiantTestnetMixin, Coin):
-    '''Radiant Testnet for Radiant daemons.'''
-    GENESIS_HASH = ('000000002008a2f4a76b850a838ae084'
-                    '994c200dc2fd354f73102298fe063a91')
-    NAME = "RadiantTestnet"
-    PEERS = [
-    ]
-    GENESIS_ACTIVATION = 0
-    RPC_PORT = 17332 
 
-class RadiantTestnet4(RadiantTestnetMixin, Coin):
-    '''Radiant Testnet4 for Radiant daemons.'''
+class RadiantTestnet(RadiantTestnetMixin, Coin):
+    """Radiant Testnet (current) - RPC port 27332"""
+    NAME = "RadiantTestnet"
     GENESIS_HASH = ('000000000d8ada264d16f87a590b2af3'
                     '20cd3c7e3f9be5482163e830fd00aca2')
-    NAME = "RadiantTestnet4"
-    PEERS = [
-    ]
+    PEERS = []
     GENESIS_ACTIVATION = 0
-    RPC_PORT = 27332 
-# 
-class RadiantScalingTestnet(RadiantTestnet):
+    RPC_PORT = 27332
+
+
+class RadiantScalingTestnet(RadiantTestnetMixin, Coin):
+    """Radiant Scaling Testnet - RPC port 37332"""
+    NAME = "RadiantScalingTestnet"
     NET = "scalingtest"
     GENESIS_HASH = ('00000000ea7340a6e9ae28ad8ca95a65'
                     '2c8da00ee7ea97e6cb42cd1558884c87')
-    PEERS = [
-    ]
-    TX_COUNT = 1000
-    TX_COUNT_HEIGHT = 1000
+    PEERS = []
+    TX_COUNT = 1000000
+    TX_COUNT_HEIGHT = 100000
     TX_PER_BLOCK = 5000
     GENESIS_ACTIVATION = 0
-    RPC_PORT = 37332 
+    RPC_PORT = 37332
 
     @classmethod
     def max_fetch_blocks(cls, height):
@@ -263,7 +256,9 @@ class RadiantScalingTestnet(RadiantTestnet):
             return 100
         return 3
 
-class RadiantRegtest(RadiantTestnet):
+
+class RadiantRegtest(RadiantTestnetMixin, Coin):
+    """Radiant Regtest - RPC port 17443"""
     NAME = "RadiantRegtest"
     NET = "regtest"
     GENESIS_HASH = ('0043dd38bd3e58f3af0fece66c3ab63d'
@@ -271,14 +266,6 @@ class RadiantRegtest(RadiantTestnet):
     PEERS = []
     TX_COUNT = 1
     TX_COUNT_HEIGHT = 1
+    TX_PER_BLOCK = 1
     GENESIS_ACTIVATION = 0
     RPC_PORT = 17443
-
-class Radiant(Coin):
-    NAME = "Radiant"
-    TX_COUNT = 1000
-    TX_COUNT_HEIGHT = 2000
-    TX_PER_BLOCK = 10
-    PEERS = [
-    ]
-    GENESIS_ACTIVATION = 0

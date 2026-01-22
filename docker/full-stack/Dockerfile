@@ -23,6 +23,7 @@ ENV PACKAGES="\
   automake \
   vim \
   wget \
+  curl \
   cmake \
   python3 \
   python3-pip \

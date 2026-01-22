@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # Radiant Node (radiantd) - Built from Radiant-Core/Radiant-Core
   radiantd:
@@ -28,6 +26,15 @@ services:
       timeout: 10s
       retries: 5
       start_period: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    deploy:
+      resources:
+        reservations:
+          memory: 2G
 
   # ElectrumX Server
   electrumx:
@@ -62,7 +69,23 @@ services:
       - REQUEST_TIMEOUT=60
       - COST_SOFT_LIMIT=1000
       - COST_HARD_LIMIT=10000
-    stop_grace_period: 120s
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+    stop_signal: SIGTERM
+    stop_grace_period: 180s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    deploy:
+      resources:
+        reservations:
+          memory: 4G
 
 volumes:
   radiant-data:

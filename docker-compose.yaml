@@ -1,13 +1,14 @@
-version: "3"
 services:
   electrumx:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: electrumx_server
+    restart: unless-stopped
     ports:
       - "50010:50010"   # Port for TCP connections
       - "50012:50012"   # Port for SSL connections
+      - "8000:8000"     # Port for RPC
     cap_add:
       - SYS_PTRACE
     environment:
@@ -26,7 +27,23 @@ services:
       - MAX_SEND=${MAX_SEND}
       - MAX_RECV=${MAX_RECV}
     network_mode: "host"
-    stop_grace_period: 120s
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+    stop_signal: SIGTERM
+    stop_grace_period: 180s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    deploy:
+      resources:
+        reservations:
+          memory: 4G
     volumes:
       - ./electrumdb:/root/electrumdb   # Mount local directory for database and SSL keys
     entrypoint: ["python3", "electrumx_server"]
