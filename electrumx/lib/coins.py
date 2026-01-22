@@ -195,7 +195,7 @@ class Coin:
         '''Return the number of standard coin units as a Decimal given a
         quantity of smallest units.
 
-        For example 1 BSV is returned for 100 million satoshis.
+        For example 1 RXD is returned for 100 million satoshis.
         '''
         return Decimal(value) / cls.VALUE_PER_COIN
 
