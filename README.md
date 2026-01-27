@@ -1,13 +1,13 @@
-# **= ElectrumX for Radiant =**
+# ElectrumX for Radiant
 
-2026 The Radiant Community Devs
-
-:Licence: MIT
-:Language: Python (>= 3.8)
-:Database: RocksDB (default) or LevelDB
-:Version: 1.3.0
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![Version 1.3.0](https://img.shields.io/badge/Version-1.3.0-green.svg)](https://github.com/Radiant-Core/ElectrumX/releases)
+[![Database: RocksDB](https://img.shields.io/badge/Database-RocksDB-orange.svg)](https://rocksdb.org/)
 
 A high-performance Electrum server implementation for the Radiant blockchain.
+
+_© 2026 The Radiant Community Devs_
 
 # Features
 
@@ -338,6 +338,6 @@ MIT License. See `LICENCE` file for details.
 
 # Links
 
-- `Radiant Blockchain <https://radiantblockchain.org>`\_
-- `Original ElectrumX <https://github.com/kyuupichan/electrumx>`\_
-- `ElectrumX Documentation <https://electrumx.readthedocs.io/>`\_
+- [Radiant Blockchain](https://radiantblockchain.org)
+- [Original ElectrumX](https://github.com/kyuupichan/electrumx)
+- [ElectrumX Documentation](https://electrumx.readthedocs.io/)
