@@ -1,6 +1,4 @@
-**= ElectrumX for Radiant =**
-=============================
-
+# **= ElectrumX for Radiant =**
 
 2026 The Radiant Community Devs
 
@@ -11,8 +9,7 @@
 
 A high-performance Electrum server implementation for the Radiant blockchain.
 
-Features
-========
+# Features
 
 - **RocksDB Support**: Production-optimized database backend with lower steady-state RAM
 - **Swap Index**: Native support for RSWP on-chain swap advertisement tracking
@@ -20,20 +17,19 @@ Features
 - **Docker Ready**: Production-ready Docker images with resource limits
 - **SSL/TLS**: Built-in support for encrypted connections
 
-Quick Start (Docker)
-====================
+# Quick Start (Docker)
 
 The fastest way to deploy ElectrumX for Radiant is using Docker.
 
-Prerequisites
--------------
+## Prerequisites
 
 - Docker and Docker Compose installed
 - A running Radiant Core node with RPC access
 - At least 16GB RAM recommended for initial sync
 
 1. Clone and Configure
-----------------------
+
+---
 
 .. code-block:: bash
 
@@ -47,9 +43,10 @@ Prerequisites
     vi .env
 
 2. Configure Environment
-------------------------
 
-Edit ``.env`` with your settings:
+---
+
+Edit `.env` with your settings:
 
 .. code-block:: bash
 
@@ -65,10 +62,11 @@ Edit ``.env`` with your settings:
     DB_DIRECTORY=/root/electrumdb
 
     # Services to expose
-    SERVICES=tcp://0.0.0.0:50010,SSL://0.0.0.0:50012,rpc://
+    SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50022,rpc://
 
 3. Generate SSL Certificates
-----------------------------
+
+---
 
 For production, use proper CA-signed certificates. For testing:
 
@@ -81,7 +79,8 @@ For production, use proper CA-signed certificates. For testing:
         -subj "/CN=your.domain.com"
 
 4. Build and Run
-----------------
+
+---
 
 .. code-block:: bash
 
@@ -97,8 +96,7 @@ For production, use proper CA-signed certificates. For testing:
     # Graceful shutdown
     docker-compose down
 
-Full Stack Deployment (Node + ElectrumX)
-----------------------------------------
+## Full Stack Deployment (Node + ElectrumX)
 
 For a complete one-command deployment including both Radiant Node and ElectrumX:
 
@@ -116,10 +114,9 @@ This automatically:
 - Starts ElectrumX connected to the node
 - Persists all data in Docker volumes
 
-See ``docker/full-stack/README.md`` for details.
+See `docker/full-stack/README.md` for details.
 
-Manual Installation
-===================
+# Manual Installation
 
 For non-Docker deployments:
 
@@ -149,28 +146,23 @@ For non-Docker deployments:
     # Run
     python3 electrumx_server
 
-Database Backends
-=================
+# Database Backends
 
-RocksDB (Default)
------------------
+## RocksDB (Default)
 
 - **~52% lower steady-state RAM** (561MB vs 1.17GB observed)
 - Better write amplification control
 - More tuning options
 - Production recommended
 
-LevelDB
--------
+## LevelDB
 
 - Legacy database used by ElectrumX
 - Higher steady-state RAM usage
 
+Set `DB_ENGINE=leveldb` to use LevelDB instead.
 
-Set ``DB_ENGINE=leveldb`` to use LevelDB instead.
-
-RocksDB Tuning
---------------
+## RocksDB Tuning
 
 Key environment variables for RocksDB performance:
 
@@ -192,63 +184,58 @@ Key environment variables for RocksDB performance:
     # Durability (true for production serving)
     ROCKSDB_USE_FSYNC=true
 
-See ``docs/environment.rst`` for all available options.
+See `docs/environment.rst` for all available options.
 
-Production Recommendations
-==========================
+# Production Recommendations
 
-Security
---------
+## Security
 
-1. **Enable Rate Limiting**: Never set ``COST_SOFT_LIMIT=0`` or ``COST_HARD_LIMIT=0`` in production
+1.  **Enable Rate Limiting**: Never set `COST_SOFT_LIMIT=0` or `COST_HARD_LIMIT=0` in production
 
-   .. code-block:: bash
+    .. code-block:: bash
 
-       COST_SOFT_LIMIT=1000
-       COST_HARD_LIMIT=10000
+        COST_SOFT_LIMIT=1000
+        COST_HARD_LIMIT=10000
 
-2. **Use Strong RPC Credentials**: Generate random passwords for ``DAEMON_URL``
+2.  **Use Strong RPC Credentials**: Generate random passwords for `DAEMON_URL`
 
-3. **SSL Certificates**: Use CA-signed certificates for public servers
+3.  **SSL Certificates**: Use CA-signed certificates for public servers
 
-4. **Run as Non-Root**: Set ``ALLOW_ROOT=false`` when possible
+4.  **Run as Non-Root**: Set `ALLOW_ROOT=false` when possible
 
-5. **Firewall**: Only expose necessary ports (50010/tcp, 50012/ssl)
+5.  **Firewall**: Only expose necessary ports (50010/tcp, 50012/ssl, 50022/wss)
 
-Performance
------------
+## Performance
 
-1. **Use RocksDB** for lower steady-state memory
+1.  **Use RocksDB** for lower steady-state memory
 
-2. **Tune Cache Size** based on available RAM:
+2.  **Tune Cache Size** based on available RAM:
 
-   .. code-block:: bash
+    .. code-block:: bash
 
-       CACHE_MB=10000  # For 16GB+ RAM systems
+        CACHE_MB=10000  # For 16GB+ RAM systems
 
-3. **Set Resource Limits** in Docker:
+3.  **Set Resource Limits** in Docker:
 
-   .. code-block:: yaml
+    .. code-block:: yaml
 
-       deploy:
-         resources:
-           limits:
-             memory: 12G
+        deploy:
+          resources:
+            limits:
+              memory: 12G
 
-4. **Use SSD Storage** for the database directory
+4.  **Use SSD Storage** for the database directory
 
-Monitoring
-----------
+## Monitoring
 
 Monitor these metrics in production:
 
 - RSS memory usage
-- Database size (``du -sh /path/to/electrumdb``)
+- Database size (`du -sh /path/to/electrumdb`)
 - Sync status via RPC
 - Connection count
 
-RPC Commands
-============
+# RPC Commands
 
 ElectrumX exposes an RPC interface (default port 8000):
 
@@ -264,13 +251,12 @@ ElectrumX exposes an RPC interface (default port 8000):
 
 Common RPC commands:
 
-- ``getinfo`` - Server status and sync progress
-- ``sessions`` - Connected client sessions
-- ``peers`` - Known peer servers
-- ``stop`` - Graceful shutdown
+- `getinfo` - Server status and sync progress
+- `sessions` - Connected client sessions
+- `peers` - Known peer servers
+- `stop` - Graceful shutdown
 
-Swap Index (RSWP)
-=================
+# Swap Index (RSWP)
 
 ElectrumX supports indexing on-chain swap advertisements:
 
@@ -283,15 +269,13 @@ ElectrumX supports indexing on-chain swap advertisements:
 
 Swap RPC methods:
 
-- ``getopenorders(token_ref, limit, offset)``
-- ``getswaphistory(token_ref, limit, offset)``
-- ``getswapcount(token_ref)``
+- `getopenorders(token_ref, limit, offset)`
+- `getswaphistory(token_ref, limit, offset)`
+- `getswapcount(token_ref)`
 
-Troubleshooting
-===============
+# Troubleshooting
 
-"Connection refused" to daemon
-------------------------------
+## "Connection refused" to daemon
 
 Ensure Radiant Core is running with RPC enabled:
 
@@ -304,23 +288,20 @@ Ensure Radiant Core is running with RPC enabled:
     rpcallowip=127.0.0.1
     rpcport=7332
 
-High memory usage during sync
------------------------------
+## High memory usage during sync
 
 This is normal. Memory usage drops significantly after initial sync completes.
 With RocksDB, steady-state RAM is typically under 500MB.
 
-Slow initial sync
------------------
+## Slow initial sync
 
 Initial sync can take 1-2 hours depending on hardware. To speed up:
 
-- Increase ``CACHE_MB``
+- Increase `CACHE_MB`
 - Use SSD storage
 - Ensure Radiant Core is fully synced first
 
-"Module not found: rocksdb"
----------------------------
+## "Module not found: rocksdb"
 
 Install the Python RocksDB bindings:
 
@@ -328,40 +309,35 @@ Install the Python RocksDB bindings:
 
     pip3 install Cython python-rocksdb
 
-Docker permission errors
-------------------------
+## Docker permission errors
 
-Ensure the ``electrumdb`` directory is writable:
+Ensure the `electrumdb` directory is writable:
 
 .. code-block:: bash
 
     mkdir -p electrumdb
     chmod 755 electrumdb
 
-Documentation
-=============
+# Documentation
 
-- Full environment variables: ``docs/environment.rst``
-- Architecture: ``docs/architecture.rst``
-- Performance notes: ``docs/PERFORMANCE-NOTES``
-- API protocol: ``docs/protocol-*.rst``
+- Full environment variables: `docs/environment.rst`
+- Architecture: `docs/architecture.rst`
+- Performance notes: `docs/PERFORMANCE-NOTES`
+- API protocol: `docs/protocol-*.rst`
 
-Contributing
-============
+# Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Run tests: ``pytest tests/``
+3. Run tests: `pytest tests/`
 4. Submit a pull request
 
-License
-=======
+# License
 
-MIT License. See ``LICENCE`` file for details.
+MIT License. See `LICENCE` file for details.
 
-Links
-=====
+# Links
 
-- `Radiant Blockchain <https://radiantblockchain.org>`_
-- `Original ElectrumX <https://github.com/kyuupichan/electrumx>`_
-- `ElectrumX Documentation <https://electrumx.readthedocs.io/>`_
+- `Radiant Blockchain <https://radiantblockchain.org>`\_
+- `Original ElectrumX <https://github.com/kyuupichan/electrumx>`\_
+- `ElectrumX Documentation <https://electrumx.readthedocs.io/>`\_

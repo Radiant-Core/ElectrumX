@@ -6,9 +6,10 @@ services:
     container_name: electrumx_server
     restart: unless-stopped
     ports:
-      - "50010:50010"   # Port for TCP connections
-      - "50012:50012"   # Port for SSL connections
-      - "8000:8000"     # Port for RPC
+      - "50010:50010" # Port for TCP connections
+      - "50012:50012" # Port for SSL connections
+      - "50022:50022" # Port for WSS connections
+      - "8000:8000" # Port for RPC
     cap_add:
       - SYS_PTRACE
     environment:
@@ -45,5 +46,5 @@ services:
         reservations:
           memory: 4G
     volumes:
-      - ./electrumdb:/root/electrumdb   # Mount local directory for database and SSL keys
+      - ./electrumdb:/root/electrumdb # Mount local directory for database and SSL keys
     entrypoint: ["python3", "electrumx_server"]

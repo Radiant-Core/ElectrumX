@@ -1,4 +1,7 @@
 **/__pycache__/
+*.pyc
+*.pyo
+*.egg
 .cache/
 .coverage
 .pytest_cache/
@@ -6,7 +9,14 @@
 *.#*
 *#
 *~
+*.log
 docs/_build
+
+# SSL certificates/keys (sensitive)
+*.key
+*.crt
+*.csr
+*.pem
 /build
 /dist
 /electrumx.egg-info
