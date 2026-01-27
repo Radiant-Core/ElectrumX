@@ -31,16 +31,16 @@ The fastest way to deploy ElectrumX for Radiant is using Docker.
 
 ---
 
-.. code-block:: bash
+```bash
+git clone https://github.com/Radiant-Core/ElectrumX.git
+cd ElectrumX
 
-    git clone https://github.com/Radiant-Core/ElectrumX.git
-    cd ElectrumX
+# Copy the example config
+cp config.env .env
 
-    # Copy the example config
-    cp config.env .env
-
-    # Edit with your Radiant node credentials
-    vi .env
+# Edit with your Radiant node credentials
+vi .env
+```
 
 2. Configure Environment
 
@@ -48,21 +48,21 @@ The fastest way to deploy ElectrumX for Radiant is using Docker.
 
 Edit `.env` with your settings:
 
-.. code-block:: bash
+```bash
+# Required: Your Radiant Core RPC credentials
+DAEMON_URL=http://YOUR_RPC_USER:YOUR_RPC_PASSWORD@localhost:7332/
 
-    # Required: Your Radiant Core RPC credentials
-    DAEMON_URL=http://YOUR_RPC_USER:YOUR_RPC_PASSWORD@localhost:7332/
+# Network
+COIN=Radiant
+NET=mainnet
 
-    # Network
-    COIN=Radiant
-    NET=mainnet
+# Database (rocksdb recommended for production)
+DB_ENGINE=rocksdb
+DB_DIRECTORY=/root/electrumdb
 
-    # Database (rocksdb recommended for production)
-    DB_ENGINE=rocksdb
-    DB_DIRECTORY=/root/electrumdb
-
-    # Services to expose
-    SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50022,rpc://
+# Services to expose
+SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50022,rpc://
+```
 
 3. Generate SSL Certificates
 
@@ -70,42 +70,42 @@ Edit `.env` with your settings:
 
 For production, use proper CA-signed certificates. For testing:
 
-.. code-block:: bash
-
-    mkdir -p electrumdb
-    openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
-        -keyout electrumdb/server.key \
-        -out electrumdb/server.crt \
-        -subj "/CN=your.domain.com"
+```bash
+mkdir -p electrumdb
+openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
+    -keyout electrumdb/server.key \
+    -out electrumdb/server.crt \
+    -subj "/CN=your.domain.com"
+```
 
 4. Build and Run
 
 ---
 
-.. code-block:: bash
+```bash
+# Build the image
+docker-compose build
 
-    # Build the image
-    docker-compose build
+# Start in background
+docker-compose up -d
 
-    # Start in background
-    docker-compose up -d
+# View logs
+docker logs -f electrumx_server
 
-    # View logs
-    docker logs -f electrumx_server
-
-    # Graceful shutdown
-    docker-compose down
+# Graceful shutdown
+docker-compose down
+```
 
 ## Full Stack Deployment (Node + ElectrumX)
 
 For a complete one-command deployment including both Radiant Node and ElectrumX:
 
-.. code-block:: bash
-
-    cd docker/full-stack
-    cp .env.example .env
-    # Edit .env with secure RPC credentials
-    docker-compose up -d
+```bash
+cd docker/full-stack
+cp .env.example .env
+# Edit .env with secure RPC credentials
+docker-compose up -d
+```
 
 This automatically:
 
@@ -120,31 +120,31 @@ See `docker/full-stack/README.md` for details.
 
 For non-Docker deployments:
 
-.. code-block:: bash
+```bash
+# Install system dependencies (Ubuntu/Debian)
+sudo apt update
+sudo apt install -y python3 python3-pip python3-dev \
+    libleveldb-dev librocksdb-dev libsnappy-dev \
+    libbz2-dev libzstd-dev liblz4-dev zlib1g-dev
 
-    # Install system dependencies (Ubuntu/Debian)
-    sudo apt update
-    sudo apt install -y python3 python3-pip python3-dev \
-        libleveldb-dev librocksdb-dev libsnappy-dev \
-        libbz2-dev libzstd-dev liblz4-dev zlib1g-dev
+# Clone repository
+git clone https://github.com/Radiant-Core/ElectrumX.git
+cd ElectrumX
 
-    # Clone repository
-    git clone https://github.com/Radiant-Core/ElectrumX.git
-    cd ElectrumX
+# Install Python dependencies
+pip3 install -r requirements.txt
 
-    # Install Python dependencies
-    pip3 install -r requirements.txt
+# Set environment variables (or use a .env file)
+export COIN=Radiant
+export NET=mainnet
+export DB_ENGINE=rocksdb
+export DB_DIRECTORY=/path/to/electrumdb
+export DAEMON_URL=http://user:pass@localhost:7332/
+export SERVICES=tcp://0.0.0.0:50010,rpc://
 
-    # Set environment variables (or use a .env file)
-    export COIN=Radiant
-    export NET=mainnet
-    export DB_ENGINE=rocksdb
-    export DB_DIRECTORY=/path/to/electrumdb
-    export DAEMON_URL=http://user:pass@localhost:7332/
-    export SERVICES=tcp://0.0.0.0:50010,rpc://
-
-    # Run
-    python3 electrumx_server
+# Run
+python3 electrumx_server
+```
 
 # Database Backends
 
@@ -166,23 +166,23 @@ Set `DB_ENGINE=leveldb` to use LevelDB instead.
 
 Key environment variables for RocksDB performance:
 
-.. code-block:: bash
+```bash
+# Compression (lz4 recommended)
+ROCKSDB_COMPRESSION=lz4
 
-    # Compression (lz4 recommended)
-    ROCKSDB_COMPRESSION=lz4
+# Block cache - main read performance lever (MB)
+ROCKSDB_BLOCK_CACHE_MB=256
 
-    # Block cache - main read performance lever (MB)
-    ROCKSDB_BLOCK_CACHE_MB=256
+# Write buffer size (bytes)
+ROCKSDB_WRITE_BUFFER_SIZE=67108864
 
-    # Write buffer size (bytes)
-    ROCKSDB_WRITE_BUFFER_SIZE=67108864
+# Background jobs
+ROCKSDB_MAX_BACKGROUND_COMPACTIONS=4
+ROCKSDB_MAX_BACKGROUND_FLUSHES=2
 
-    # Background jobs
-    ROCKSDB_MAX_BACKGROUND_COMPACTIONS=4
-    ROCKSDB_MAX_BACKGROUND_FLUSHES=2
-
-    # Durability (true for production serving)
-    ROCKSDB_USE_FSYNC=true
+# Durability (true for production serving)
+ROCKSDB_USE_FSYNC=true
+```
 
 See `docs/environment.rst` for all available options.
 
@@ -192,10 +192,10 @@ See `docs/environment.rst` for all available options.
 
 1.  **Enable Rate Limiting**: Never set `COST_SOFT_LIMIT=0` or `COST_HARD_LIMIT=0` in production
 
-    .. code-block:: bash
-
-        COST_SOFT_LIMIT=1000
-        COST_HARD_LIMIT=10000
+    ```bash
+    COST_SOFT_LIMIT=1000
+    COST_HARD_LIMIT=10000
+    ```
 
 2.  **Use Strong RPC Credentials**: Generate random passwords for `DAEMON_URL`
 
@@ -211,18 +211,18 @@ See `docs/environment.rst` for all available options.
 
 2.  **Tune Cache Size** based on available RAM:
 
-    .. code-block:: bash
-
-        CACHE_MB=10000  # For 16GB+ RAM systems
+    ```bash
+    CACHE_MB=10000  # For 16GB+ RAM systems
+    ```
 
 3.  **Set Resource Limits** in Docker:
 
-    .. code-block:: yaml
-
-        deploy:
-          resources:
-            limits:
-              memory: 12G
+    ```yaml
+    deploy:
+      resources:
+        limits:
+          memory: 12G
+    ```
 
 4.  **Use SSD Storage** for the database directory
 
@@ -239,15 +239,15 @@ Monitor these metrics in production:
 
 ElectrumX exposes an RPC interface (default port 8000):
 
-.. code-block:: bash
+```bash
+# Inside Docker container
+docker exec electrumx_server python3 electrumx_rpc getinfo
 
-    # Inside Docker container
-    docker exec electrumx_server python3 electrumx_rpc getinfo
-
-    # Or using the script directly
-    ./electrumx_rpc getinfo
-    ./electrumx_rpc sessions
-    ./electrumx_rpc peers
+# Or using the script directly
+./electrumx_rpc getinfo
+./electrumx_rpc sessions
+./electrumx_rpc peers
+```
 
 Common RPC commands:
 
@@ -260,12 +260,12 @@ Common RPC commands:
 
 ElectrumX supports indexing on-chain swap advertisements:
 
-.. code-block:: bash
-
-    # Enable swap indexing
-    SWAP_INDEX=1
-    SWAP_HISTORY_BLOCKS=10000
-    SWAP_CACHE_MB=10
+```bash
+# Enable swap indexing
+SWAP_INDEX=1
+SWAP_HISTORY_BLOCKS=10000
+SWAP_CACHE_MB=10
+```
 
 Swap RPC methods:
 
@@ -279,14 +279,14 @@ Swap RPC methods:
 
 Ensure Radiant Core is running with RPC enabled:
 
-.. code-block:: bash
-
-    # In radiant.conf
-    server=1
-    rpcuser=youruser
-    rpcpassword=yourpassword
-    rpcallowip=127.0.0.1
-    rpcport=7332
+```bash
+# In radiant.conf
+server=1
+rpcuser=youruser
+rpcpassword=yourpassword
+rpcallowip=127.0.0.1
+rpcport=7332
+```
 
 ## High memory usage during sync
 
@@ -305,18 +305,18 @@ Initial sync can take 1-2 hours depending on hardware. To speed up:
 
 Install the Python RocksDB bindings:
 
-.. code-block:: bash
-
-    pip3 install Cython python-rocksdb
+```bash
+pip3 install Cython python-rocksdb
+```
 
 ## Docker permission errors
 
 Ensure the `electrumdb` directory is writable:
 
-.. code-block:: bash
-
-    mkdir -p electrumdb
-    chmod 755 electrumdb
+```bash
+mkdir -p electrumdb
+chmod 755 electrumdb
+```
 
 # Documentation
 
