@@ -7,6 +7,7 @@ services:
     restart: unless-stopped
     ports:
       - "50010:50010"   # Port for TCP connections
+      - "50011:50011"   # Port for WSS connections (Photonic wallet)
       - "50012:50012"   # Port for SSL connections
       - "8000:8000"     # Port for RPC
     cap_add:

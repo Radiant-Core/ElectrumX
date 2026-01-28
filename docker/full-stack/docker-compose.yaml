@@ -50,6 +50,7 @@ services:
       - electrumx-data:/root/electrumdb
     ports:
       - "50010:50010"   # TCP
+      - "50011:50011"   # WSS (Photonic wallet)
       - "50012:50012"   # SSL
       - "8000:8000"     # RPC
     environment:
@@ -58,7 +59,7 @@ services:
       - NET=mainnet
       - DB_ENGINE=rocksdb
       - DB_DIRECTORY=/root/electrumdb
-      - SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,rpc://0.0.0.0:8000
+      - SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://0.0.0.0:8000
       - SSL_CERTFILE=/root/electrumdb/server.crt
       - SSL_KEYFILE=/root/electrumdb/server.key
       - ALLOW_ROOT=true

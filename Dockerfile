@@ -69,7 +69,7 @@ ENV DB_ENGINE=rocksdb
 ENV ELECTRUMX_ENV=prod
 
 # SSL configuration
-ENV SERVICES=tcp://0.0.0.0:50010,SSL://0.0.0.0:50012,rpc://0.0.0.0:8000
+ENV SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://0.0.0.0:8000
 ENV SSL_CERTFILE=/root/electrumdb/server.crt
 ENV SSL_KEYFILE=/root/electrumdb/server.key
 
@@ -97,7 +97,7 @@ RUN openssl x509 -req -days 1825 -in server.csr -signkey server.key -out server.
 
 WORKDIR /root/electrumx
 
-EXPOSE 50010 50012 8000
+EXPOSE 50010 50011 50012 8000
 
 ENTRYPOINT ["python3", "electrumx_server"]
 
