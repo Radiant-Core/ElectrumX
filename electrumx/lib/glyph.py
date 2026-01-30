@@ -206,13 +206,22 @@ def is_container(protocols: List[int]) -> bool:
 
 def validate_protocols(protocols: List[int]) -> Tuple[bool, Optional[str]]:
     """
-    Validate a protocol combination.
+    Validate a protocol combination per Glyph v2 spec Section 3.5.
     
     Returns (valid, error_message).
     """
     # FT and NFT are mutually exclusive
     if GlyphProtocol.GLYPH_FT in protocols and GlyphProtocol.GLYPH_NFT in protocols:
         return False, 'FT and NFT are mutually exclusive'
+    
+    # BURN alone is invalid (it's an action marker, not a token type)
+    if protocols == [GlyphProtocol.GLYPH_BURN]:
+        return False, 'BURN alone is invalid - it is an action marker, not a token type'
+    
+    # BURN must accompany a token type (FT or NFT)
+    if GlyphProtocol.GLYPH_BURN in protocols:
+        if GlyphProtocol.GLYPH_FT not in protocols and GlyphProtocol.GLYPH_NFT not in protocols:
+            return False, 'BURN must accompany FT or NFT'
     
     # DMINT requires FT
     if GlyphProtocol.GLYPH_DMINT in protocols and GlyphProtocol.GLYPH_FT not in protocols:
@@ -229,6 +238,10 @@ def validate_protocols(protocols: List[int]) -> Tuple[bool, Optional[str]]:
     # ENCRYPTED requires NFT
     if GlyphProtocol.GLYPH_ENCRYPTED in protocols and GlyphProtocol.GLYPH_NFT not in protocols:
         return False, 'ENCRYPTED requires NFT'
+    
+    # TIMELOCK requires ENCRYPTED
+    if GlyphProtocol.GLYPH_TIMELOCK in protocols and GlyphProtocol.GLYPH_ENCRYPTED not in protocols:
+        return False, 'TIMELOCK requires ENCRYPTED'
     
     # AUTHORITY requires NFT
     if GlyphProtocol.GLYPH_AUTHORITY in protocols and GlyphProtocol.GLYPH_NFT not in protocols:
