@@ -9,6 +9,8 @@
 
 A high-performance Electrum server implementation for the Radiant blockchain.
 
+> **Radiant Core 2.1 Compatible**: ElectrumX works with Radiant Core 2.1+ (V2 hard fork at block 410,000). The V2 fork adds on-chain hash opcodes (OP_BLAKE3, OP_K12) for Glyph v2 dMint tokens — ElectrumX requires no changes as PoW validation is handled at the consensus level.
+
 ## Features
 
 - **RocksDB Support**: Production-optimized database backend with lower steady-state RAM

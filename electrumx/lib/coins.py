@@ -1,5 +1,6 @@
 # Copyright (c) 2016-2017, Neil Booth
 # Copyright (c) 2017, the ElectrumX authors
+# Copyright (c) 2026, the Radiant developers
 #
 # All rights reserved.
 #

@@ -20,6 +20,7 @@ services:
       -rpcbind=0.0.0.0
       -txindex=1
       -zmqpubhashblock=tcp://0.0.0.0:28332
+      -minrelaytxfee=0.01
     healthcheck:
       test: ["CMD", "radiant-cli", "-rpcuser=${RPC_USER:-radiant}", "-rpcpassword=${RPC_PASS:-radiant}", "getblockchaininfo"]
       interval: 30s
