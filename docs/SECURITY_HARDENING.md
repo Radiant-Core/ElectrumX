@@ -379,7 +379,7 @@ docker start electrumx
 If you discover a security vulnerability:
 
 1. **Do NOT** open a public GitHub issue
-2. Email: radiantblockchain@protonmail.com
+2. Email: info@radiantfoundation.org
 3. Subject: `[SECURITY] ElectrumX - Brief Description`
 
 ---
