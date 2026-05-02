@@ -1589,6 +1589,26 @@ class ElectrumX(SessionBase):
         self.bump_cost(1.0)
         return []
 
+    async def wave_resolve(self, name):
+        '''Resolve a WAVE name to its target address.
+
+        name: WAVE name to resolve (e.g., "alice" or "alice.rxd")
+        '''
+        self.bump_cost(1.0)
+        # Base ElectrumX has no WAVE index; return not-found so clients
+        # fall back to their local DB.  RXinDexer overrides this method.
+        return None
+
+    async def wave_check_available(self, name):
+        '''Check if a WAVE name is available for registration.
+
+        name: WAVE name to check
+        '''
+        self.bump_cost(0.5)
+        # Base ElectrumX has no WAVE index; signal unsupported so clients
+        # use their local fallback.  RXinDexer overrides this method.
+        raise RPCError(BAD_REQUEST, 'WAVE indexing not available on this server')
+
     def set_request_handlers(self, ptuple):
         self.protocol_tuple = ptuple
 
@@ -1620,6 +1640,9 @@ class ElectrumX(SessionBase):
 
         if ptuple >= (1, 4, 2):
             handlers['blockchain.scripthash.unsubscribe'] = self.scripthash_unsubscribe
+
+        handlers['wave.resolve'] = self.wave_resolve
+        handlers['wave.check_available'] = self.wave_check_available
 
         self.request_handlers = handlers
 
