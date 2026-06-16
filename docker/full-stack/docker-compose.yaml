@@ -9,20 +9,23 @@ services:
     volumes:
       - radiant-data:/root/.radiant
     ports:
-      - "7332:7332"   # RPC port
-      - "7333:7333"   # P2P port
+      - "7333:7333"   # P2P port (public)
+      # RPC (7332) controls the wallet — electrumx reaches it over the internal
+      # docker network, so publish to localhost ONLY, never 0.0.0.0.
+      - "127.0.0.1:7332:7332"   # RPC port (localhost only)
     command: >
       -server=1
       -printtoconsole
       -rpcuser=${RPC_USER:-radiant}
-      -rpcpassword=${RPC_PASS:-radiant}
+      -rpcpassword=${RPC_PASS:?set a strong RPC_PASS (e.g. openssl rand -hex 32) in .env}
       -rpcallowip=0.0.0.0/0
       -rpcbind=0.0.0.0
+      -rpcallowhost=radiantd
       -txindex=1
       -zmqpubhashblock=tcp://0.0.0.0:28332
       -minrelaytxfee=0.01
     healthcheck:
-      test: ["CMD", "radiant-cli", "-rpcuser=${RPC_USER:-radiant}", "-rpcpassword=${RPC_PASS:-radiant}", "getblockchaininfo"]
+      test: ["CMD", "radiant-cli", "-rpcuser=${RPC_USER:-radiant}", "-rpcpassword=${RPC_PASS}", "getblockchaininfo"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -55,7 +58,7 @@ services:
       - "50012:50012"   # SSL
       - "8000:8000"     # RPC
     environment:
-      - DAEMON_URL=http://${RPC_USER:-radiant}:${RPC_PASS:-radiant}@radiantd:7332/
+      - DAEMON_URL=http://${RPC_USER:-radiant}:${RPC_PASS}@radiantd:7332/
       - COIN=Radiant
       - NET=mainnet
       - DB_ENGINE=rocksdb
