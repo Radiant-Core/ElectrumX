@@ -3,9 +3,31 @@
 #      written (b'RU' + height), not under the plain UTXO undo key (b'U' + ...).
 #   2. block_processor diff_pos must return len(hashes1), not a nonexistent
 #      'hashes' name, when two hash lists fully agree.
+# Plus the P0.4 follow-up:
+#   3. clear_excess_undo_info must ALSO garbage-collect the b'RU' ref-loc undo
+#      keys (they sort under b'R', not b'U', so the b'U'-only sweep left them to
+#      grow unboundedly) using the same keep-window logic.
+
+import types
 
 from electrumx.server.db import DB
 from electrumx.lib.util import pack_be_uint32
+
+
+class _Batch:
+    '''Context-manager batch matching the storage write_batch() interface.'''
+
+    def __init__(self, store):
+        self._store = store
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def delete(self, key):
+        self._store.pop(key, None)
 
 
 class FakeKVStore(dict):
@@ -13,6 +35,18 @@ class FakeKVStore(dict):
 
     def get(self, key, default=None):
         return dict.get(self, key, default)
+
+    def iterator(self, prefix=b'', reverse=False):
+        # Mirror the real backend: yield (key, value) for keys under `prefix`
+        # in ascending key order (clear_excess_undo_info relies on the ascending
+        # height sort within a prefix to break early).
+        items = sorted((k, v) for k, v in self.items() if k.startswith(prefix))
+        if reverse:
+            items = list(reversed(items))
+        return iter(items)
+
+    def write_batch(self):
+        return _Batch(self)
 
 
 def _bare_db():
@@ -105,3 +139,55 @@ def test_block_processor_diff_pos_no_stray_name():
     src = inspect.getsource(block_processor.BlockProcessor._calc_reorg_range)
     assert 'return len(hashes1)' in src
     assert 'return len(hashes)\n' not in src
+
+
+# --- P0.4 #3: clear_excess_undo_info must GC the b'RU' ref-loc undo keys -------
+
+def _gc_db(db_height, reorg_limit):
+    '''A DB wired up just enough to run clear_excess_undo_info: an in-memory
+    utxo_db, a db_height, and an env exposing reorg_limit (min_undo_height uses
+    it).  The logger is a no-op so we don't depend on logging config.'''
+    db = _bare_db()
+    db.db_height = db_height
+    db.env = types.SimpleNamespace(reorg_limit=reorg_limit)
+    db.logger = types.SimpleNamespace(info=lambda *a, **k: None)
+    return db
+
+
+def test_clear_excess_undo_info_gcs_ru_keys():
+    '''The ref-loc undo keys (b'RU' + height) sort under b'R', so the original
+    b'U'-only sweep never reached them and they grew unboundedly.  The GC must
+    now drop b'RU' undo strictly below the keep window while preserving both
+    b'U' and b'RU' undo inside it.'''
+    reorg_limit = 10
+    db_height = 100
+    db = _gc_db(db_height, reorg_limit)
+    # Keep window: heights >= min_undo_height(100) = 100 - 10 + 1 = 91.
+    min_height = db.min_undo_height(db_height)
+    assert min_height == 91
+
+    stale_h = 50      # well below the window -> must be deleted
+    in_window_h = 95  # inside the window -> must be kept
+
+    db.utxo_db[db.undo_key(stale_h)] = b'u-stale'
+    db.utxo_db[db.ref_loc_undo_key(stale_h)] = b'ru-stale'
+    db.utxo_db[db.undo_key(in_window_h)] = b'u-keep'
+    db.utxo_db[db.ref_loc_undo_key(in_window_h)] = b'ru-keep'
+
+    db.clear_excess_undo_info()
+
+    # Stale entries of BOTH prefixes are gone...
+    assert db.undo_key(stale_h) not in db.utxo_db
+    assert db.ref_loc_undo_key(stale_h) not in db.utxo_db, \
+        'b\'RU\' stale ref-loc undo was never garbage-collected (the bug)'
+    # ...and in-window entries of BOTH prefixes survive.
+    assert db.undo_key(in_window_h) in db.utxo_db
+    assert db.ref_loc_undo_key(in_window_h) in db.utxo_db
+
+
+def test_clear_excess_undo_info_sweeps_both_prefixes_in_source():
+    '''Source-level guard: the GC must iterate both b'U' and b'RU' prefixes.'''
+    import inspect
+    src = inspect.getsource(DB.clear_excess_undo_info)
+    assert "prefix=b'U'" in src
+    assert "prefix=b'RU'" in src

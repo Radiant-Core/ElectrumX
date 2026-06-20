@@ -62,10 +62,17 @@ class DB(object):
     it was shutdown uncleanly.
     '''
 
-    # Version 9 forces a re-sync after the ref-loc undo-key fix (P0.2): the
-    # writer stored ref-loc/WAVE undo info under b'RU' + height but the reader
-    # used b'U' + height, so b'RU' undo info from older DBs is missing/unusable
-    # for reorg backup. Drop pre-9 versions so patched nodes rebuild from genesis.
+    # Version 9 reflects the ref-loc undo-key fix (P0.2): the writer stored
+    # ref-loc/WAVE undo info under b'RU' + height but the reader used
+    # b'U' + height, so b'RU' undo info from older DBs is missing/unusable for
+    # reorg backup.
+    #
+    # NOTE: bumping DB_VERSIONS does NOT trigger any automatic rebuild or
+    # migration.  Only versions listed here are accepted: opening a DB whose
+    # stored db_version is not in this list raises DBError in read_utxo_state()
+    # and the node REFUSES TO START.  Recovery is manual -- the operator must
+    # wipe the DB directory and resync from genesis.  Dropping pre-9 versions
+    # is therefore a hard stop for un-wiped old DBs, not an in-place upgrade.
     DB_VERSIONS = [9]
 
     class DBError(Exception):
@@ -542,10 +549,22 @@ class DB(object):
 
     def clear_excess_undo_info(self):
         '''Clear excess undo info.  Only most recent N are kept.'''
-        prefix = b'U'
         min_height = self.min_undo_height(self.db_height)
         keys = []
-        for key, _hist in self.utxo_db.iterator(prefix=prefix):
+        # Plain UTXO undo info is keyed b'U' + height.
+        for key, _hist in self.utxo_db.iterator(prefix=b'U'):
+            height, = unpack_be_uint32(key[-4:])
+            if height >= min_height:
+                break
+            keys.append(key)
+
+        # Ref-loc/WAVE undo info is keyed b'RU' + height (it sorts under b'R',
+        # NOT b'U'), so the b'U' sweep above never reaches it.  Sweep it here
+        # with the SAME keep-window so it cannot grow unboundedly while we still
+        # avoid deleting any undo a within-window reorg might need.  Both key
+        # builders pack the height as a trailing big-endian uint32, so key[-4:]
+        # decodes the height for either prefix.
+        for key, _hist in self.utxo_db.iterator(prefix=b'RU'):
             height, = unpack_be_uint32(key[-4:])
             if height >= min_height:
                 break

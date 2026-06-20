@@ -396,6 +396,38 @@ class BlockProcessor:
 
         await sleep(0)
 
+    def _output_indexable(self, pk_script):
+        '''Return True iff this output must be indexed (advance: put_utxo)
+        and, symmetrically, spent on backup (backup: spend_utxo).
+
+        This is the SINGLE predicate both advance_txs and _backup_txs route
+        their add/spend decision through, so the two paths cover the identical
+        output set by construction.  Pre-fix the paths used different
+        predicates: advance skipped an output whenever the script-parse gate
+        (Script.zero_refs / hashX / codeScriptHash) raised, but backup only
+        skipped on is_unspendable_legacy.  A consensus-valid but degenerate
+        scriptPubKey (e.g. b'\\x05ab', a truncated pushdata) has
+        is_unspendable_legacy == False yet makes zero_refs raise, so advance
+        never added it while backup still tried to spend it -> 'UTXO not
+        found' ChainError that HALTS a reorg.
+
+        False (skip) iff the output is unspendable OR the IDENTICAL parse call
+        advance_txs uses to gate put_utxo raises (same exception set:
+        ScriptError, AssertionError, ValueError, IndexError).
+        '''
+        if is_unspendable_legacy(pk_script):
+            return False
+        try:
+            # Must mirror the put_utxo gate in advance_txs exactly: the same
+            # calls (zero_refs + hashX_from_script + codeScriptHash_from_script)
+            # under the same exception set.
+            zero_refs = Script.zero_refs(pk_script)
+            self.coin.hashX_from_script(zero_refs)
+            self.coin.codeScriptHash_from_script(pk_script)
+        except (ScriptError, AssertionError, ValueError, IndexError):
+            return False
+        return True
+
     def advance_txs(self, txs, is_unspendable):
         self.tx_hashes.append(b''.join(tx_hash for tx, tx_hash in txs))
 
@@ -437,14 +469,19 @@ class BlockProcessor:
 
             # Add the new UTXOs
             for idx, txout in enumerate(tx.outputs):
-                # Ignore unspendable outputs
-                if is_unspendable(txout.pk_script):
+                # P0.4: Add the UTXO iff the SHARED predicate says it is
+                # indexable.  _backup_txs spends through the same predicate, so
+                # advance-add and backup-spend cover the identical output set ->
+                # no reorg-time desync.  This subsumes the unspendable check and
+                # the script-parse gate (truncated/oversize scripts that raise
+                # ScriptError etc. are skipped here rather than letting the
+                # exception escape and halt the indexer).
+                if not self._output_indexable(txout.pk_script):
                     continue
 
-                # P0.3: One malformed output script must not halt the indexer.
-                # Register the UTXO/hashX first; if even that fails (e.g. a
-                # truncated/oversize script raises ScriptError), log and skip
-                # this single output rather than letting the exception escape.
+                # P0.3: the parse below is the same call _output_indexable just
+                # vetted, so it cannot raise here; the try/except is kept as
+                # defence-in-depth so a single output can never halt the indexer.
                 try:
                     # Get the hashX
                     zero_refs = Script.zero_refs(txout.pk_script)
@@ -582,41 +619,58 @@ class BlockProcessor:
         mints = set() # Missing mints
         for tx, tx_hash in reversed(txs):
             for idx, txout in enumerate(tx.outputs):
-                # Spend the TX outputs.  Be careful with unspendable
-                # outputs - we didn't save those in the first place.
-                if is_unspendable(txout.pk_script):
+                # P0.4: Spend the TX output iff the SHARED predicate marked it
+                # indexable on advance.  Using the IDENTICAL predicate (instead
+                # of the old is_unspendable_legacy-only test) guarantees backup
+                # spends exactly the outputs advance added: degenerate scripts
+                # that zero_refs rejects (e.g. b'\x05ab') were never put_utxo'd,
+                # so we must NOT spend_utxo them here -> no 'UTXO not found'
+                # ChainError that would halt the reorg.
+                if not self._output_indexable(txout.pk_script):
                     continue
 
                 cache_value = spend_utxo(tx_hash, idx)
                 touched.add(cache_value[:HASHX_LEN])
-                
+
                 # Delete any refs for outpoint
                 self.delete_potential_refs(tx_hash, idx)
 
-                all_refs, _, _ = Script.get_push_input_refs(txout.pk_script)
-                all_refs_dedup = Script.dedup_refs(all_refs)
+                # P0.3 symmetry: ref extraction is the script-parsing-heavy
+                # path.  advance_txs treats a malformed ref-script as ref-less
+                # (UTXO still indexed); mirror that on backup so the same
+                # output cannot escape an exception here.  spend_utxo /
+                # delete_potential_refs above are deterministic bookkeeping and
+                # stay OUTSIDE this try.
+                try:
+                    all_refs, _, _ = Script.get_push_input_refs(txout.pk_script)
+                    all_refs_dedup = Script.dedup_refs(all_refs)
 
-                for ref in all_refs_dedup.keys():
-                    touched.add(script_hashX(ref))
-                    if any(txin.prev_hash == ref[:32] and to_le_uint32(txin.prev_idx) == ref[32:] for txin in tx.inputs):
-                        mints.add(ref)
-                        # Delete mint
-                        cached_value = self.ref_mint_cache.pop(ref, None)
-                        rm_db_key = b'rm' + ref
-                        rm_db_value = self.db.utxo_db.get(rm_db_key)
-                        if cached_value and rm_db_value:
-                            raise IndexError(f'Critical Error: Found ref mint in cache and DB')
-                        if rm_db_value:
-                            self.db_deletes.append(rm_db_key)
-                    else:
-                        # Delete location. This will be recreated later from undo data if it existed before this block.
-                        cached_value = self.ref_loc_cache.pop(ref, None)
-                        rl_db_key = b'rl' + ref
-                        rl_db_value = self.db.utxo_db.get(rl_db_key)
-                        if cached_value and rl_db_value:
-                            raise IndexError(f'Critical Error: Found ref location in cache and DB')
-                        if rl_db_value:
-                            self.db_deletes.append(rl_db_key)
+                    for ref in all_refs_dedup.keys():
+                        touched.add(script_hashX(ref))
+                        if any(txin.prev_hash == ref[:32] and to_le_uint32(txin.prev_idx) == ref[32:] for txin in tx.inputs):
+                            mints.add(ref)
+                            # Delete mint
+                            cached_value = self.ref_mint_cache.pop(ref, None)
+                            rm_db_key = b'rm' + ref
+                            rm_db_value = self.db.utxo_db.get(rm_db_key)
+                            if cached_value and rm_db_value:
+                                raise IndexError(f'Critical Error: Found ref mint in cache and DB')
+                            if rm_db_value:
+                                self.db_deletes.append(rm_db_key)
+                        else:
+                            # Delete location. This will be recreated later from undo data if it existed before this block.
+                            cached_value = self.ref_loc_cache.pop(ref, None)
+                            rl_db_key = b'rl' + ref
+                            rl_db_value = self.db.utxo_db.get(rl_db_key)
+                            if cached_value and rl_db_value:
+                                raise IndexError(f'Critical Error: Found ref location in cache and DB')
+                            if rl_db_value:
+                                self.db_deletes.append(rl_db_key)
+                except ScriptError as e:
+                    self.logger.warning(
+                        'skipping refs for malformed output {}:{:d} ({}); '
+                        'treating output as ref-less on backup'
+                        .format(hash_to_hex_str(tx_hash), idx, e))
 
             # Restore the inputs
             for txin in reversed(tx.inputs):
