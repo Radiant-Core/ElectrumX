@@ -1,6 +1,7 @@
-# ElectrumX for Radiant - Standalone Build
-# Clones directly from GitHub for use without local repository
-# Build with: docker build -t electrumx .
+# ElectrumX for Radiant - Full-Stack Build
+# Built from local source; the build context is the repo root (see
+# docker/full-stack/docker-compose.yaml: build.context: ../..).
+# Build with (from the repo root): docker build -f docker/full-stack/Dockerfile -t electrumx .
 
 FROM ubuntu:22.04
 
@@ -48,8 +49,8 @@ RUN mkdir /root/electrumdb
 
 WORKDIR /root
 
-# Clone from GitHub
-RUN git clone --depth 1 --branch master https://github.com/Radiant-Core/ElectrumX.git electrumx
+# Build from local source (copied from the build context)
+COPY . /root/electrumx
 
 WORKDIR /root/electrumx
 
@@ -67,7 +68,7 @@ ENV DB_ENGINE=rocksdb
 ENV ELECTRUMX_ENV=prod
 
 # SSL configuration
-ENV SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://0.0.0.0:8000
+ENV SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://127.0.0.1:8000
 ENV SSL_CERTFILE=/root/electrumdb/server.crt
 ENV SSL_KEYFILE=/root/electrumdb/server.key
 

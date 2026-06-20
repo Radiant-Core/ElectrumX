@@ -2,11 +2,13 @@
 
 One-command deployment for running a complete Radiant infrastructure with both the full node (radiantd) and ElectrumX server.
 
-**This deployment is fully self-contained** - both radiantd and ElectrumX are built from source during the Docker build process:
-- **Radiant Node**: Built from [Radiant-Core/Radiant-Core](https://github.com/Radiant-Core/Radiant-Core)
-- **ElectrumX**: Built from [Radiant-Core/ElectrumX](https://github.com/Radiant-Core/ElectrumX)
+**This deployment builds both services from source** during the Docker build process:
+- **Radiant Node**: Built from [Radiant-Core/Radiant-Core](https://github.com/Radiant-Core/Radiant-Core) (cloned during the build)
+- **ElectrumX**: Built from this local checkout (the compose build context is the repo root, `../..`)
 
-You can deploy by downloading just this `docker/full-stack/` directory.
+Because ElectrumX is now built from the local source tree, run `docker-compose` from this
+`docker/full-stack/` directory inside a full ElectrumX checkout (no longer downloadable as a
+standalone directory).
 
 ## Quick Start
 

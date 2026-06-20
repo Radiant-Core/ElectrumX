@@ -204,9 +204,27 @@ class Deserializer(object):
         # Some coins have excess data beyond the end of the transactions
         return [read() for _ in range(self._read_varint())]
 
+    # Smallest possible serialized size of one input/output. Used only to
+    # sanity-cap declared counts (P0.3) so a malformed varint count cannot make
+    # us try to build billions of objects from a small buffer.
+    MIN_INPUT_SIZE = 41   # 32 prev_hash + 4 prev_idx + 1 script len + 4 sequence
+    MIN_OUTPUT_SIZE = 9   # 8 value + 1 script len
+
+    def _read_count(self, min_elem_size):
+        '''Read a varint element count and sanity-check it against the bytes
+        remaining in the buffer (P0.3). A count that could not possibly fit
+        is rejected rather than driving a giant range()/list comprehension.'''
+        count = self._read_varint()
+        remaining = self.binary_length - self.cursor
+        if count * min_elem_size > remaining:
+            raise ValueError(
+                f'declared element count {count} exceeds remaining buffer '
+                f'{remaining} bytes (min {min_elem_size} bytes/element)')
+        return count
+
     def _read_inputs(self):
         read_input = self._read_input
-        return [read_input() for i in range(self._read_varint())]
+        return [read_input() for i in range(self._read_count(self.MIN_INPUT_SIZE))]
 
     def _read_input(self):
         return TxInput(
@@ -218,7 +236,7 @@ class Deserializer(object):
 
     def _read_outputs(self):
         read_output = self._read_output
-        return [read_output() for i in range(self._read_varint())]
+        return [read_output() for i in range(self._read_count(self.MIN_OUTPUT_SIZE))]
 
     def _read_output(self):
         return TxOutput(

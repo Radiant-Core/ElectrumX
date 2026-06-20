@@ -50,7 +50,7 @@ Docker configuration needed to expose WSS port (50011) for Photonic Wallet conne
 #### Dockerfile Configuration
 **File:** `Dockerfile:72`
 ```bash
-ENV SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://0.0.0.0:8000
+ENV SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://127.0.0.1:8000
 ```
 
 **File:** `Dockerfile:100`
@@ -60,7 +60,7 @@ EXPOSE 50010 50011 50012 8000
 - Port 50010: TCP connections
 - **Port 50011: WSS connections (Photonic Wallet)** ✅
 - Port 50012: SSL connections
-- Port 8000: RPC
+- Port 8000: RPC (loopback-only — `rpc://127.0.0.1:8000`, never published off-host)
 
 #### Docker Compose Configuration
 **File:** `docker-compose.yaml:10`
@@ -69,7 +69,7 @@ ports:
   - "50010:50010"   # Port for TCP connections
   - "50011:50011"   # Port for WSS connections (Photonic wallet)
   - "50012:50012"   # Port for SSL connections
-  - "8000:8000"     # Port for RPC
+  # Operator/admin RPC (rpc://127.0.0.1:8000) is intentionally NOT published.
 ```
 
 ### SSL Certificate Generation ✅

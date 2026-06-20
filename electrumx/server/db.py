@@ -62,7 +62,11 @@ class DB(object):
     it was shutdown uncleanly.
     '''
 
-    DB_VERSIONS = [6, 7, 8]
+    # Version 9 forces a re-sync after the ref-loc undo-key fix (P0.2): the
+    # writer stored ref-loc/WAVE undo info under b'RU' + height but the reader
+    # used b'U' + height, so b'RU' undo info from older DBs is missing/unusable
+    # for reorg backup. Drop pre-9 versions so patched nodes rebuild from genesis.
+    DB_VERSIONS = [9]
 
     class DBError(Exception):
         '''Raised on general DB errors generally indicating corruption.'''
@@ -503,7 +507,10 @@ class DB(object):
 
     def read_ref_loc_undo_info(self, height):
         '''Read undo information from a file for the current height.'''
-        return self.utxo_db.get(self.undo_key(height))
+        # Must use the same key builder as the writer (flush_ref_loc_undo_infos
+        # writes under b'RU' + height). The previous code read with undo_key
+        # (b'U' + height) so ref-loc/WAVE undo info was never found on reorg.
+        return self.utxo_db.get(self.ref_loc_undo_key(height))
 
     def flush_ref_loc_undo_infos(self, batch_put, undo_infos):
         '''undo_infos is a list of (undo_info, height) pairs.'''

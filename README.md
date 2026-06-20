@@ -59,7 +59,7 @@ DB_ENGINE=rocksdb
 DB_DIRECTORY=/root/electrumdb
 
 # Services to expose (includes WSS for Photonic wallet)
-SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://0.0.0.0:8000
+SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://127.0.0.1:8000
 ```
 
 ### 3. Generate SSL Certificates
@@ -134,7 +134,7 @@ export NET=mainnet
 export DB_ENGINE=rocksdb
 export DB_DIRECTORY=/path/to/electrumdb
 export DAEMON_URL=http://user:pass@localhost:7332/
-export SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://0.0.0.0:8000
+export SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://127.0.0.1:8000
 
 # Run
 python3 electrumx_server

@@ -1,10 +1,47 @@
+# Build context excludes for `COPY . /root/electrumx` (see Dockerfile /
+# docker/full-stack/Dockerfile). Keep requirements.txt, setup.py, the electrumx
+# package, electrumx_server/electrumx_rpc and config.* — the build needs them.
+
+# Version control
+.git
+.gitignore
+
+# Secrets / environment files (may contain credentials)
+.env
+.env.*
+
+# Database directories (host bind mounts / full-stack DB dir)
 electrumdb
 electrumx-db
 electrumx-db-*
-.venv
-.venv*
-.git
+full-stack-db
+
+# Python build artefacts
 __pycache__
 *.pyc
 *.pyo
+*.so
+/build
+/dist
+*.egg-info
+.eggs
+
+# Test / type-check caches
+.pytest_cache
+.mypy_cache
+.coverage
+.cache
+
+# Virtual environments
+.venv
+.venv*
+venv
+
+# Editor / OS files
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Misc
 benchmarks

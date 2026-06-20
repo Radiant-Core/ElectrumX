@@ -18,7 +18,7 @@ from aiorpcx import TaskGroup, CancelledError
 import electrumx
 from electrumx.server.daemon import DaemonError
 from electrumx.lib.hash import hash_to_hex_str, HASHX_LEN
-from electrumx.lib.script import is_unspendable_legacy, is_unspendable_genesis, Script
+from electrumx.lib.script import is_unspendable_legacy, is_unspendable_genesis, Script, ScriptError
 from electrumx.lib.util import (
     class_logger, pack_le_uint32, pack_le_uint64, unpack_le_uint64, unpack_le_uint32_from
 )
@@ -273,7 +273,7 @@ class BlockProcessor:
             for n, (hash1, hash2) in enumerate(zip(hashes1, hashes2)):
                 if hash1 != hash2:
                     return n
-            return len(hashes)
+            return len(hashes1)
 
         if count < 0:
             # A real reorg
@@ -441,58 +441,79 @@ class BlockProcessor:
                 if is_unspendable(txout.pk_script):
                     continue
 
-                # Get the hashX
-                zero_refs = Script.zero_refs(txout.pk_script)
-                hashX = script_hashX(zero_refs)
-                codeScriptHash = script_codeScriptHash(txout.pk_script)
+                # P0.3: One malformed output script must not halt the indexer.
+                # Register the UTXO/hashX first; if even that fails (e.g. a
+                # truncated/oversize script raises ScriptError), log and skip
+                # this single output rather than letting the exception escape.
+                try:
+                    # Get the hashX
+                    zero_refs = Script.zero_refs(txout.pk_script)
+                    hashX = script_hashX(zero_refs)
+                    codeScriptHash = script_codeScriptHash(txout.pk_script)
+                except (ScriptError, AssertionError, ValueError, IndexError) as e:
+                    self.logger.warning(
+                        'skipping unparsable output {}:{:d} ({}); '
+                        'treating as unspendable'
+                        .format(hash_to_hex_str(tx_hash), idx, e))
+                    continue
+
                 append_hashX(hashX)
                 cache_key = tx_hash + to_le_uint32(idx)
                 put_utxo(cache_key, hashX + codeScriptHash + tx_numb + to_le_uint64(txout.value))
 
-                all_refs, normal_refs, singleton_refs = Script.get_push_input_refs(txout.pk_script)
-                all_refs_dedup = Script.dedup_refs(all_refs)
-                normal_refs_dedup = Script.dedup_refs(normal_refs)
-                singleton_refs_dedup = Script.dedup_refs(singleton_refs)
-                # Save all the refs if any for the utxo
-                refs_value = b''
-                for ref_id in all_refs_dedup.keys():
-                    enc_ref_type = 0
-                    # check if it's a singleton ref by first ensuring it's not in the normal refs map
-                    if not normal_refs_dedup.get(ref_id):
-                        assert singleton_refs_dedup.get(ref_id)
-                        enc_ref_type = 1
-                    refs_value += ref_id + (enc_ref_type).to_bytes(1, "little")
-                
-                # Save the refs for the outpoint
-                if len(refs_value):
-                    put_refs(cache_key, refs_value)
-                 
-                for ref in singleton_refs_dedup.keys():
-                    if any(txin.prev_hash == ref[:32] and to_le_uint32(txin.prev_idx) == ref[32:] for txin in tx.inputs):
-                        # Track singleton ref mints
-                        mints.add(ref)
-                        put_ref_mint(ref, tx_hash)
-                    else:
-                        # Track location of singleton refs
-                        put_ref_loc(ref, tx_hash)
+                # P0.3: ref extraction is the script-parsing-heavy path; if it
+                # raises on a malformed script, treat this output as ref-less
+                # (UTXO is still indexed above) and carry on with the next output.
+                try:
+                    all_refs, normal_refs, singleton_refs = Script.get_push_input_refs(txout.pk_script)
+                    all_refs_dedup = Script.dedup_refs(all_refs)
+                    normal_refs_dedup = Script.dedup_refs(normal_refs)
+                    singleton_refs_dedup = Script.dedup_refs(singleton_refs)
+                    # Save all the refs if any for the utxo
+                    refs_value = b''
+                    for ref_id in all_refs_dedup.keys():
+                        enc_ref_type = 0
+                        # check if it's a singleton ref by first ensuring it's not in the normal refs map
+                        if not normal_refs_dedup.get(ref_id):
+                            assert singleton_refs_dedup.get(ref_id)
+                            enc_ref_type = 1
+                        refs_value += ref_id + (enc_ref_type).to_bytes(1, "little")
 
-                        # Save previous block's ref location if it isn't already, and ref wasn't minted this block
-                        if ref not in mints and ref not in ref_loc_undo:
-                            cur_loc = self.db.utxo_db.get(b'rl' + ref)
-                            if cur_loc:
-                                set_ref_loc_undo(ref, cur_loc)
+                    # Save the refs for the outpoint
+                    if len(refs_value):
+                        put_refs(cache_key, refs_value)
 
-                    append_ref(ref)
+                    for ref in singleton_refs_dedup.keys():
+                        if any(txin.prev_hash == ref[:32] and to_le_uint32(txin.prev_idx) == ref[32:] for txin in tx.inputs):
+                            # Track singleton ref mints
+                            mints.add(ref)
+                            put_ref_mint(ref, tx_hash)
+                        else:
+                            # Track location of singleton refs
+                            put_ref_loc(ref, tx_hash)
 
-                # Track normal ref mints
-                # Location for normal refs are not tracked
-                for ref in normal_refs_dedup.keys():
-                    if any(txin.prev_hash == ref[:32] and to_le_uint32(txin.prev_idx) == ref[32:] for txin in tx.inputs):
-                        put_ref_mint(ref, tx_hash)
+                            # Save previous block's ref location if it isn't already, and ref wasn't minted this block
+                            if ref not in mints and ref not in ref_loc_undo:
+                                cur_loc = self.db.utxo_db.get(b'rl' + ref)
+                                if cur_loc:
+                                    set_ref_loc_undo(ref, cur_loc)
+
                         append_ref(ref)
 
-                # We could check for refs used in inputs that are burnt in this tx,
-                # but current burn implementations are done using op return so this may not be needed
+                    # Track normal ref mints
+                    # Location for normal refs are not tracked
+                    for ref in normal_refs_dedup.keys():
+                        if any(txin.prev_hash == ref[:32] and to_le_uint32(txin.prev_idx) == ref[32:] for txin in tx.inputs):
+                            put_ref_mint(ref, tx_hash)
+                            append_ref(ref)
+
+                    # We could check for refs used in inputs that are burnt in this tx,
+                    # but current burn implementations are done using op return so this may not be needed
+                except (ScriptError, AssertionError, ValueError, IndexError) as e:
+                    self.logger.warning(
+                        'skipping refs for malformed output {}:{:d} ({}); '
+                        'treating output as ref-less'
+                        .format(hash_to_hex_str(tx_hash), idx, e))
 
             append_hashXs(hashXs)
             update_touched(hashXs)

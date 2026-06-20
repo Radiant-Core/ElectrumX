@@ -50,8 +50,8 @@ RUN mkdir /root/electrumdb
 
 WORKDIR /root
 
-# Clone from GitHub
-RUN git clone --depth 1 --branch master https://github.com/Radiant-Core/ElectrumX.git electrumx
+# Build from local source (copied from the build context)
+COPY . /root/electrumx
 
 WORKDIR /root/electrumx
 
@@ -69,7 +69,7 @@ ENV DB_ENGINE=rocksdb
 ENV ELECTRUMX_ENV=prod
 
 # SSL configuration
-ENV SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://0.0.0.0:8000
+ENV SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://127.0.0.1:8000
 ENV SSL_CERTFILE=/root/electrumdb/server.crt
 ENV SSL_KEYFILE=/root/electrumdb/server.key
 

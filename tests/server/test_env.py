@@ -117,10 +117,11 @@ def test_SERVICES():
     ]
 
 def test_SERVICES_default_rpc():
-    # This has a blank entry between commas
-    os.environ['SERVICES'] = 'rpc://foo.bar'
+    setup_base_env()
+    # rpc must bind a loopback host; default RPC port is applied when omitted.
+    os.environ['SERVICES'] = 'rpc://127.0.0.1'
     e = Env()
-    assert e.services[0].host == 'foo.bar'
+    assert str(e.services[0].host) == '127.0.0.1'
     assert e.services[0].port == 8000
     os.environ['SERVICES'] = 'rpc://:800'
     e = Env()
@@ -130,6 +131,19 @@ def test_SERVICES_default_rpc():
     e = Env()
     assert e.services[0].host == 'localhost'
     assert e.services[0].port == 8000
+
+
+def test_rpc_must_be_loopback():
+    # The operator/admin RPC must refuse to start when bound off-host.
+    setup_base_env()
+    for bad in ('rpc://0.0.0.0:8000', 'rpc://1.2.3.4:8000', 'rpc://foo.bar:8000'):
+        os.environ['SERVICES'] = bad
+        with pytest.raises(ServiceError):
+            Env()
+    # Loopback bindings are accepted.
+    for good in ('rpc://127.0.0.1:8000', 'rpc://[::1]:8000', 'rpc://localhost:8000'):
+        os.environ['SERVICES'] = good
+        Env()
 
 
 def test_bad_SERVICES():

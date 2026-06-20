@@ -43,8 +43,10 @@ services:
   # ElectrumX Server
   electrumx:
     build:
-      context: .
-      dockerfile: Dockerfile
+      # ElectrumX is now built from local source (COPY . in the Dockerfile), so
+      # the build context must be the repo root rather than this directory.
+      context: ../..
+      dockerfile: docker/full-stack/Dockerfile
     container_name: electrumx_server
     restart: unless-stopped
     depends_on:
@@ -56,14 +58,15 @@ services:
       - "50010:50010"   # TCP
       - "50011:50011"   # WSS (Photonic wallet)
       - "50012:50012"   # SSL
-      - "8000:8000"     # RPC
+      # Operator/admin RPC (rpc://127.0.0.1:8000) is intentionally NOT published;
+      # it must stay loopback-only.
     environment:
       - DAEMON_URL=http://${RPC_USER:-radiant}:${RPC_PASS}@radiantd:7332/
       - COIN=Radiant
       - NET=mainnet
       - DB_ENGINE=rocksdb
       - DB_DIRECTORY=/root/electrumdb
-      - SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://0.0.0.0:8000
+      - SERVICES=tcp://0.0.0.0:50010,ssl://0.0.0.0:50012,wss://0.0.0.0:50011,rpc://127.0.0.1:8000
       - SSL_CERTFILE=/root/electrumdb/server.crt
       - SSL_KEYFILE=/root/electrumdb/server.key
       - ALLOW_ROOT=true

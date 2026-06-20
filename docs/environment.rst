@@ -121,6 +121,12 @@ Here are some examples of valid services::
   *host* defaults to all of the machine's interfaces, except if the protocol is **rpc**,
   when it defaults to :const:`localhost`.
 
+  .. warning:: The **rpc** service is the operator/admin RPC interface and must never be
+            reachable off-host.  Bind it only to a loopback address
+            (:const:`localhost`, ``127.0.0.1`` or ``[::1]``).  ElectrumX refuses to start
+            if an **rpc** service is bound to a non-loopback address, and ``LocalRPC``
+            rejects any connection whose peer is not loopback as defence-in-depth.
+
   *port* can only be defaulted for **rpc** where the default is :const:`8000`.
 
   On most Unix systems ports below 1024 require elevated privileges so choosing a higher

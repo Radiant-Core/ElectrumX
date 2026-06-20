@@ -8,6 +8,7 @@
 '''Class for handling environment configuration and defaults.'''
 
 
+import os
 import re
 from ipaddress import IPv4Address, IPv6Address
 
@@ -93,6 +94,23 @@ class Env(EnvBase):
             self.ssl_keyfile = self.required('SSL_KEYFILE')
         self.report_services = self.services_to_report()
 
+        # Fail-closed startup guards (env finalized above)
+        self.check_startup_guards()
+
+    def check_startup_guards(self):
+        '''Refuse to start in unsafe configurations.'''
+        # Refuse a zero-throttle (disabled cost hard limit) in production.
+        net = self.default('NET', 'mainnet').strip()
+        if net == 'mainnet' and self.cost_hard_limit == 0:
+            raise self.Error('COST_HARD_LIMIT must not be 0 in production '
+                             '(NET=mainnet): refusing to disable cost throttling')
+
+        # Refuse to run as root outside a container.
+        if self.allow_root and not os.path.exists('/.dockerenv'):
+            raise self.Error('ALLOW_ROOT is set but no container marker '
+                             '(/.dockerenv) was found: refusing to run as root '
+                             'outside a container')
+
     def sane_max_sessions(self):
         '''Return the maximum number of sessions to permit.  Normally this
         is MAX_SESSIONS.  However, to prevent open file exhaustion, ajdust
@@ -144,10 +162,20 @@ class Env(EnvBase):
         default_services['rpc'] = {ServicePart.HOST: 'localhost', ServicePart.PORT: 8000}
         services = self._parse_services(self.default('SERVICES', ''), default_part)
 
-        # Find onion hosts
+        # Find onion hosts; refuse to start if the operator RPC binds off-host
         for service in services:
             if str(service.host).endswith('.onion'):
                 raise ServiceError(f'bad host for SERVICES: {service}')
+            if service.protocol == 'rpc':
+                host = service.host
+                if isinstance(host, (IPv4Address, IPv6Address)):
+                    loopback = host.is_loopback
+                else:
+                    loopback = str(host).lower() == 'localhost'
+                if not loopback:
+                    raise ServiceError(
+                        f'rpc service must bind a loopback address '
+                        f'(localhost, 127.0.0.1 or ::1), not {host}')
 
         return services
 

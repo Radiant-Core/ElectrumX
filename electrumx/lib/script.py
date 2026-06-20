@@ -36,6 +36,19 @@ from electrumx.lib.util import unpack_le_uint16_from, unpack_le_uint32_from, \
 class ScriptError(Exception):
     '''Exception used for script errors.'''
 
+
+# P0.3 DoS hardening: an OP_PUSHDATA* may declare a length up to 2**32-1.
+# Reject declared push lengths beyond Radiant's consensus maximum script
+# element size before slicing, so a malformed/oversize length field is
+# rejected (and caught) instead of scanning a huge slice. This MUST equal
+# the consensus element size (MAX_SCRIPT_ELEMENT_SIZE = 32_000_000 in
+# Radiant-Core src/script/script.h) — a smaller cap silently drops refs that
+# zero_refs() still indexes (UTXO present, refs missing), making valid large
+# glyph/NFT tokens invisible. The n+dlen>len(script) bounds check below is the
+# actual per-call allocation guard; this constant only rejects beyond-consensus
+# garbage that can never appear in a valid block.
+MAX_SCRIPT_PUSH = 32_000_000
+
 OpCodes = Enumeration("Opcodes", [
     ("OP_0", 0), ("OP_PUSHDATA1", 76),
     "OP_PUSHDATA2", "OP_PUSHDATA4", "OP_1NEGATE",
@@ -292,6 +305,10 @@ class Script(object):
                         dlen, = unpack_le_uint32_from(script[n: n + 4])
                         n += 4
 
+                    # P0.3: reject oversize declared push lengths before slicing
+                    if dlen > MAX_SCRIPT_PUSH:
+                        raise IndexError
+
                     if n + dlen > len(script):
                         raise IndexError
 
@@ -341,6 +358,10 @@ class Script(object):
                     elif op == OpCodes.OP_PUSHDATA4:
                         dlen, = unpack_le_uint32_from(script[n: n + 4])
                         n += 4
+
+                    # P0.3: reject oversize declared push lengths before slicing
+                    if dlen > MAX_SCRIPT_PUSH:
+                        raise IndexError
 
                     if n + dlen > len(script):
                         raise IndexError

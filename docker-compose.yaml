@@ -9,7 +9,8 @@ services:
       - "50010:50010"   # Port for TCP connections
       - "50011:50011"   # Port for WSS connections (Photonic wallet)
       - "50012:50012"   # Port for SSL connections
-      - "8000:8000"     # Port for RPC
+      # Operator/admin RPC (rpc://127.0.0.1:8000) is intentionally NOT published.
+      # It must stay loopback-only; never expose it off-host.
     cap_add:
       - SYS_PTRACE
     environment:
@@ -27,7 +28,11 @@ services:
       - MAX_SESSIONS=${MAX_SESSIONS}
       - MAX_SEND=${MAX_SEND}
       - MAX_RECV=${MAX_RECV}
-    network_mode: "host"
+    # NOTE: host networking is deliberately NOT used. With network_mode: host the
+    # `ports:` mapping is ignored and EVERY bound service (including the operator
+    # RPC on 127.0.0.1:8000) is published on the host, defeating the loopback
+    # pinning above. Keep bridge networking so only the ports listed above are
+    # reachable off-host.
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 50010 || exit 1"]
       interval: 60s
