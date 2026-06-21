@@ -1,0 +1,30 @@
+# gitleaks config for ElectrumX-Radiant.
+#
+# Default rule set + an allowlist for the KNOWN placeholder credentials shipped
+# in example configs and docs. The real operator .env is gitignored and untracked
+# (security audit P0.4); these placeholders are not real secrets. gitleaks still
+# fails CI on any real secret match outside this allowlist.
+title = "ElectrumX-Radiant gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known placeholder creds in example config/docs — not real secrets"
+paths = [
+  '''(^|/)config\.env$''',
+  '''(^|/)\.env$''',
+  '''(^|/)\.env\.example$''',
+  '''(^|/)README\.md$''',
+  '''(^|/)WEBSOCKET_VERIFICATION\.md$''',
+  '''docs/.*\.(md|rst)$''',
+]
+regexes = [
+  '''dockeruser''',
+  '''dockerpass''',
+  '''YOUR_RPC_USER''',
+  '''YOUR_RPC_PASSWORD''',
+  '''change_me''',
+  '''rpcuser''',
+  '''rpcpassword''',
+]
