@@ -18,6 +18,10 @@ paths = [
   '''(^|/)README\.md$''',
   '''(^|/)WEBSOCKET_VERIFICATION\.md$''',
   '''docs/.*\.(md|rst)$''',
+  # Test fixtures are not real secrets: BIP32 public test vectors
+  # (tests/wallet/test_bip32.py) + a TokenPay test address constant
+  # (tests/lib/test_addresses.py), inherited from upstream 2017-2018 history.
+  '''(^|/)tests/''',
 ]
 regexes = [
   '''dockeruser''',
