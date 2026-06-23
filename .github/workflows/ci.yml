@@ -96,9 +96,11 @@ jobs:
           fetch-depth: 0
 
       - name: Scan for committed secrets (gitleaks)
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Config in .gitleaks.toml: default rules + an allowlist for the known
-          # placeholder creds in example configs/docs. Fails the build on a real
-          # secret match (intentionally NOT continue-on-error).
+        # Use the open-source gitleaks CLI directly — gitleaks-action@v2 requires a
+        # paid GITLEAKS_LICENSE for organization repos. Config in .gitleaks.toml
+        # (default rules + allowlist for known placeholder creds). Non-zero exit on
+        # a real secret match fails the build (intentionally NOT continue-on-error).
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" \
+            ghcr.io/gitleaks/gitleaks:latest \
+            detect --source=/repo --config=/repo/.gitleaks.toml --redact --no-banner
